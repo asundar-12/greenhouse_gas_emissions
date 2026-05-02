@@ -1,0 +1,5 @@
+outs:
+- md5: 538069f92651de7486979dcaa504481e
+  size: 101148
+  hash: md5
+  path: global_corporate_ghg_emissions_2022_2023.csv

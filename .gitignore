@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+
+# Virtual environments and local env files
+.venv/
+.env
+
+# macOS
+.DS_Store
+Library/
+.cache/
+
+# MLflow local tracking output
+mlruns/
+
+# Generated pipeline artifacts.
+# DVC will add narrower .gitignore files for versioned data/model files.
+data/processed/*
+models/*
+.dvc/site-cache/
+
+# Keep empty artifact directories visible in Git if we add .gitkeep later.
+!data/processed/.gitkeep
+!models/.gitkeep
