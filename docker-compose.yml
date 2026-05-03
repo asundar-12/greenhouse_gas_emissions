@@ -1,0 +1,11 @@
+services:
+  api:
+    build: .
+    container_name: ghg-emissions-api
+    ports:
+      - "8001:8000"
+    volumes:
+      - ./models:/app/models:ro
+    environment:
+      - PYTHONUNBUFFERED=1
+    
