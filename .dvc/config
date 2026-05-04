@@ -1,2 +1,5 @@
 [core]
     site_cache_dir = .dvc/site-cache
+    remote = gdrive
+['remote "gdrive"']
+    url = gdrive://1FH0HETrpxG1Ni4r5NJXoHITEbA7Z2hSK
