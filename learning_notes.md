@@ -610,3 +610,64 @@ FastAPI app runs inside Docker
 model artifact loads inside Docker
 prediction endpoint works from the container
 ```
+
+## Step 7: CI/CD with GitHub Actions
+
+### What is CI/CD?
+
+CI/CD stands for Continuous Integration / Continuous Delivery.
+
+In this project it means: every time code is pushed to `main`, GitHub automatically runs the DVC pipeline on a clean virtual machine and reports whether it passed or failed.
+
+This replaces the manual step of running `dvc repro` locally and hoping it works everywhere else too.
+
+### How the workflow is structured
+
+GitHub Actions workflows live in `.github/workflows/`. Any `.yml` file in that folder is automatically detected and treated as a workflow.
+
+Our workflow file is `.github/workflows/pipeline.yml`.
+
+### What each section does
+
+```text
+name + on:    -> display name and trigger events (push/PR to main)
+jobs:         -> one or more jobs to run; each gets a fresh VM
+runs-on:      -> the OS of that VM (ubuntu-latest)
+steps:        -> ordered list of things the job executes
+```
+
+### What each step does
+
+```text
+actions/checkout@v4       -> clones the repo onto the VM
+actions/setup-python@v5   -> installs the correct Python version
+pip install dvc + -r requirements.txt -> installs pipeline tooling and app deps
+dvc pull                  -> downloads DVC-tracked data from remote storage
+dvc repro                 -> runs the full pipeline (process_data -> train)
+dvc metrics show          -> prints mae, rmse, r2 to the CI logs
+```
+
+### Why `uses:` vs `run:`
+
+```text
+uses: -> pulls a pre-built Action from GitHub's marketplace (e.g. checkout, setup-python)
+run:  -> executes raw shell commands directly on the VM
+```
+
+### Why pin Action versions (`@v4`, `@v5`)?
+
+Without a version pin, a future update to the Action could silently change behavior and break the workflow. Pinning makes the workflow deterministic.
+
+### Mental Model
+
+```text
+local machine  = where you write and test code
+GitHub Actions = a clean machine that proves it works for everyone
+dvc repro      = the source of truth for whether the pipeline is healthy
+```
+
+Every push to `main` now answers the question:
+
+```text
+Does this code, on a clean machine, produce a working trained model?
+```

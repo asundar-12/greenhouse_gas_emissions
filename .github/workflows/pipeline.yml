@@ -1,0 +1,36 @@
+name: DVC Pipeline
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  run-pipeline:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.9"
+
+      - name: Install dependencies
+        run: |
+          pip install dvc 
+          pip install -r requirements.txt
+
+      - name: Pull DVC-tracked data
+        run: dvc pull 
+        env:
+          # Remote Storage Creds go here -> AWS Access Key ID
+          DVC_NO_ANALYTICS: "1"
+
+      - name: Reproduce pipeline
+        run: dvc repro
+
+      - name: Show metrics
+        run: dvc metrics show
