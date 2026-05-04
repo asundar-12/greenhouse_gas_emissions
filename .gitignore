@@ -25,3 +25,4 @@ models/*
 # Keep empty artifact directories visible in Git if we add .gitkeep later.
 !data/processed/.gitkeep
 !models/.gitkeep
+/metrics.json

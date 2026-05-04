@@ -1,0 +1,42 @@
+schema: '2.0'
+stages:
+  process_data:
+    cmd: PYTHONDONTWRITEBYTECODE=1 python -m src.data_processing
+    deps:
+    - path: data/raw/global_corporate_ghg_emissions_2022_2023.csv
+      hash: md5
+      md5: 538069f92651de7486979dcaa504481e
+      size: 101148
+    - path: src/data_processing.py
+      hash: md5
+      md5: b185fe5dccb8391bf8dbeaa10244464a
+      size: 3165
+    outs:
+    - path: data/processed/modeling_dataset.csv
+      hash: md5
+      md5: 3e3e72536df0486d04becf7d1c94fb86
+      size: 51586
+  train:
+    cmd: PYTHONDONTWRITEBYTECODE=1 python -m src.train
+    deps:
+    - path: data/processed/modeling_dataset.csv
+      hash: md5
+      md5: 3e3e72536df0486d04becf7d1c94fb86
+      size: 51586
+    - path: src/feature_engineering.py
+      hash: md5
+      md5: 0fab1db3c83aa302eb7523e219211e69
+      size: 1119
+    - path: src/train.py
+      hash: md5
+      md5: 99ee341c2fab3b4df21734d729b90573
+      size: 3353
+    outs:
+    - path: metrics.json
+      hash: md5
+      md5: 5d48b02f4e8213ddf608345f19abaa43
+      size: 117
+    - path: models/model.pkl
+      hash: md5
+      md5: 8db140a00dc85f80df6e0708e7400ed1
+      size: 3989674

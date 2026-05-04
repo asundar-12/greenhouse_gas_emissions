@@ -323,7 +323,88 @@ CI/CD checks
 
 Those tools help make training and serving environments reproducible.
 
-## Step 5: Docker and Containerization
+## Step 5: DVC Pipeline
+
+### What is a DVC pipeline?
+
+A DVC pipeline defines the steps needed to go from raw data to a trained model as a directed graph of stages.
+
+Each stage declares:
+
+```text
+cmd   -> the command to run
+deps  -> input files this stage depends on
+outs  -> output files this stage produces
+```
+
+DVC uses that information to figure out which stages are stale and need to re-run. If none of a stage's deps changed, DVC skips it.
+
+### Stage 1: `process_data`
+
+```yaml
+cmd: python -m src.data_processing
+deps:
+  - data/raw/global_corporate_ghg_emissions_2022_2023.csv
+  - src/data_processing.py
+outs:
+  - data/processed/modeling_dataset.csv
+```
+
+Reads the raw CSV, cleans and transforms it, and writes the processed dataset.
+
+DVC re-runs this stage if either the raw data file or `data_processing.py` changes. If neither changed, it skips.
+
+### Stage 2: `train`
+
+```yaml
+cmd: python -m src.train
+deps:
+  - data/processed/modeling_dataset.csv
+  - src/feature_engineering.py
+  - src/train.py
+outs:
+  - models/model.pkl
+metrics:
+  - metrics.json
+```
+
+Loads the processed dataset, engineers features, trains a RandomForest, evaluates it, and saves the model and metrics.
+
+The `metrics:` key is special. `metrics.json` is not just an output — DVC treats it as a tracked metric file, which lets us run `dvc metrics show` to compare numbers across runs and branches.
+
+### The dependency chain
+
+```text
+raw CSV
+  └── [process_data] → modeling_dataset.csv
+                          └── [train] → model.pkl + metrics.json
+```
+
+DVC builds this graph automatically from the `deps` and `outs` declarations. Running `dvc repro` walks the graph and only re-runs stages that are out of date.
+
+### What is `dvc.lock`?
+
+`dvc.lock` is the recorded result of the last `dvc repro`. It stores the exact MD5 hash of every dependency and output from that run.
+
+The next time `dvc repro` runs, DVC compares current file hashes against `dvc.lock`. If they match, the stage is skipped. If they differ, the stage re-runs.
+
+```text
+dvc.yaml   = pipeline definition (what should happen)
+dvc.lock   = recorded run result (what actually happened, with file hashes)
+metrics.json = model performance in machine-readable format
+```
+
+`dvc.lock` is committed to Git so collaborators can reproduce or continue from the exact same pipeline state.
+
+### Mental Model
+
+```text
+dvc.yaml  = recipe
+dvc.lock  = receipt
+dvc repro = cook only the parts that changed
+```
+
+## Step 6: Docker and Containerization
 
 ### Why do we use Docker?
 

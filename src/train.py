@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 
 import joblib
@@ -9,11 +10,12 @@ from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
 
-from feature_engineering import build_preprocessor, split_features_and_target
+from src.feature_engineering import build_preprocessor, split_features_and_target
 
 
 PROCESSED_DATA_PATH = Path("data/processed/modeling_dataset.csv")
 MODEL_PATH = Path("models/model.pkl")
+METRICS_PATH = Path("metrics.json")
 
 EXPERIMENT_NAME = "ghg-emissions-random-forest"
 
@@ -57,10 +59,10 @@ def evaluate_model(model: Pipeline, X_test, y_test) -> dict:
     predictions = model.predict(X_test)
 
     metrics = {
-        "mae": mean_absolute_error(y_test, predictions),
-        "mse": mean_squared_error(y_test, predictions),
-        "rmse": mean_squared_error(y_test, predictions) ** 0.5,
-        "r2": r2_score(y_test, predictions),
+        "mae": float(mean_absolute_error(y_test, predictions)),
+        "mse": float(mean_squared_error(y_test, predictions)),
+        "rmse": float(mean_squared_error(y_test, predictions) ** 0.5),
+        "r2": float(r2_score(y_test, predictions)),
     }
 
     return metrics
@@ -70,6 +72,13 @@ def save_model(model: Pipeline, path: Path = MODEL_PATH) -> None:
     """Save the trained model pipeline to disk."""
     path.parent.mkdir(parents=True, exist_ok=True)
     joblib.dump(model, path)
+
+
+def save_metrics(metrics: dict, path: Path = METRICS_PATH) -> None:
+    """Save model evaluation metrics for DVC tracking."""
+    with path.open("w", encoding="utf-8") as metrics_file:
+        json.dump(metrics, metrics_file, indent=2)
+        metrics_file.write("\n")
 
 
 def train_model() -> dict:
@@ -97,6 +106,7 @@ def train_model() -> dict:
         mlflow.log_metrics(metrics)
 
         save_model(pipeline)
+        save_metrics(metrics)
         mlflow.sklearn.log_model(pipeline, name="model")
 
     return metrics
@@ -107,6 +117,7 @@ if __name__ == "__main__":
 
     print("Training complete.")
     print(f"Model saved to: {MODEL_PATH}")
+    print(f"Metrics saved to: {METRICS_PATH}")
     print("Metrics:")
 
     for metric_name, metric_value in training_metrics.items():

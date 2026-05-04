@@ -1,0 +1,19 @@
+stages:
+  process_data:
+    cmd: PYTHONDONTWRITEBYTECODE=1 python -m src.data_processing
+    deps:
+      - data/raw/global_corporate_ghg_emissions_2022_2023.csv
+      - src/data_processing.py
+    outs:
+      - data/processed/modeling_dataset.csv
+
+  train:
+    cmd: PYTHONDONTWRITEBYTECODE=1 python -m src.train
+    deps:
+      - data/processed/modeling_dataset.csv
+      - src/feature_engineering.py
+      - src/train.py
+    outs:
+      - models/model.pkl
+    metrics:
+      - metrics.json
